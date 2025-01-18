@@ -21,22 +21,6 @@ import java.util.List;
 public class RouteService {
 
 
-    // 토픽은 route-calculate
-
-    private final KafkaService kafkaService;
-
-    public void sendRouteDataToKafka(String topic, String key, String value){
-        KafkaProducer<String, String> kafkaProducer = kafkaService.createProducer();
-        kafkaProducer.send(new ProducerRecord<>(topic,key,value));
-        kafkaProducer.close();
-    }
-
-    public void calculateShortestRouteFromKafka(){
-        KafkaConsumer<String, String> kafkaConsumer = kafkaService.createConsumer();
-
-
-    }
-
 
     public String[][] calculateMinimumTimeRoute(String[] dep, String[] des, String[][] trans) {
 

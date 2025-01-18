@@ -1,12 +1,14 @@
 package yjkim.GuideUs.Kafka.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import yjkim.GuideUs.Route.DTO.RouteCalcualteRequest;
+import yjkim.GuideUs.Route.Service.RouteService;
 
 import java.util.Properties;
 
@@ -15,6 +17,7 @@ import java.util.Properties;
 public class KafkaService {
 
     private final KafkaTemplate<String,RouteCalcualteRequest> kafkaTemplate;
+    private final RouteService routeService;
     public static final String ROUTE_CALCULATE_KAFKA_TOPIC = "route-calculate";
 
 
@@ -40,9 +43,16 @@ public class KafkaService {
     }
 
     @KafkaListener(topics = ROUTE_CALCULATE_KAFKA_TOPIC )
-    public void consume(RouteCalcualteRequest routeCalcualteRequest){
+    public void consume(ConsumerRecord<String, RouteCalcualteRequest> record){
+        String key = record.key();
+        RouteCalcualteRequest routeCalcualteRequest = record.value();
+        String[] dep = routeCalcualteRequest.getDep();
+        String[] des = routeCalcualteRequest.getDes();
+        String[][] trans = routeCalcualteRequest.getTrans();
+        trans = this.routeService.calculateMinimumTimeRoute(dep,des,trans);
 
-        // 리스너에서 계산하고 해당 결과 redis에 저장
-        //
+        // 레디스에 저장
+
+
     }
 }

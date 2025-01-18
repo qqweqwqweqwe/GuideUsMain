@@ -7,7 +7,6 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @RequiredArgsConstructor
-@NoArgsConstructor
 public class CalculateTimeKakaoRequest {
 
     private String priority;

@@ -9,13 +9,13 @@ import lombok.*;
 @RequiredArgsConstructor
 public class CalculateTimeKakaoRequest {
 
-    private String priority;
+    private String priority = "RECOMMEND";
     private String[] avoid;
     private int roadevent;
     private boolean alternatives;
     private boolean road_details;
     private int car_type;
-    private String car_fuel;
+    private String car_fuel="GASOLINE";
     private boolean car_hipass;
     private boolean summary;
     private Origin origin;

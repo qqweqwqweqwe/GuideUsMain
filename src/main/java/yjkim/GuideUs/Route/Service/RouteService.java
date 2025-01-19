@@ -1,12 +1,18 @@
 package yjkim.GuideUs.Route.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import yjkim.GuideUs.Kafka.Service.KafkaService;
 import yjkim.GuideUs.Route.DTO.CalculateTimeKakaoRequest;
@@ -20,13 +26,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RouteService {
 
+    private static final String KAKAO_MOBILILTY_URL = "https://apis-navi.kakaomobility.com/v1/waypoints/directions";
+
+    @Value("${kakao.rest_api_key}")
+    private String KAKAO_REST_API_KEY;
 
 
     public String[][] calculateMinimumTimeRoute(String[] dep, String[] des, String[][] trans) {
-
-
         int answer = 10000000;
-
         String[][] temp = new String[trans.length][3];
         List<List<String[]>> permutatedTranList = getPermutation(List.of(trans));
         for (int i = 0; i < permutatedTranList.size(); i++) {
@@ -51,23 +58,39 @@ public class RouteService {
         String desLon = des[1]; // 목적 경도
         String desLat = des[2]; // 목적 위도
 
-        CalculateTimeKakaoRequest calculateTimeKakaoRequest = new CalculateTimeKakaoRequest();
-        calculateTimeKakaoRequest.setOrigin(new CalculateTimeKakaoRequest.Origin(depName,depLon,depLat));
-        calculateTimeKakaoRequest.setDestination(new CalculateTimeKakaoRequest.Destination(desName,desLon,desLat));
-        CalculateTimeKakaoRequest.Waypoint[] waypoints = new CalculateTimeKakaoRequest.Waypoint[trans.length];
-        for(int i = 0; i<trans.length; i++){
-            waypoints[i] = new CalculateTimeKakaoRequest.Waypoint(trans[i][0],trans[i][1],trans[i][0]);
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            // HttpHeaders 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "KakaoAK " + KAKAO_REST_API_KEY);
+            headers.set("Content-Type", "application/json");
+
+            CalculateTimeKakaoRequest calculateTimeKakaoRequest = new CalculateTimeKakaoRequest();
+
+            calculateTimeKakaoRequest.setOrigin(new CalculateTimeKakaoRequest.Origin(depName, depLon, depLat));
+            calculateTimeKakaoRequest.setDestination(new CalculateTimeKakaoRequest.Destination(desName, desLon, desLat));
+            CalculateTimeKakaoRequest.Waypoint[] waypoints = new CalculateTimeKakaoRequest.Waypoint[trans.length];
+            for (int i = 0; i < trans.length; i++) {
+                waypoints[i] = new CalculateTimeKakaoRequest.Waypoint(trans[i][0], trans[i][1], trans[i][0]);
+            }
+            calculateTimeKakaoRequest.setWaypoints(waypoints);
+
+            HttpEntity<CalculateTimeKakaoRequest> requestEntity = new HttpEntity<>(calculateTimeKakaoRequest, headers);
+
+            ResponseEntity<CalculateTimeKakaoResponse> calculateTimeKakaoResponse = restTemplate.postForEntity(
+                    KAKAO_MOBILILTY_URL,
+                    requestEntity,
+                    CalculateTimeKakaoResponse.class
+            );
+            return calculateTimeKakaoResponse.getBody().getRoutes()[0].getSummary().getDuration();
         }
-        calculateTimeKakaoRequest.setWaypoints(waypoints);
+        catch (Exception e){
 
-        CalculateTimeKakaoResponse calculateTimeKakaoResponse = WebClient.create("카카오 url")
-                .post()
-                .bodyValue(calculateTimeKakaoRequest)
-                .retrieve()
-                .bodyToMono(CalculateTimeKakaoResponse.class)
-                .block();
+            System.out.println("dasdasd" + e);
+            return 1;
+        }
 
-        return calculateTimeKakaoResponse.getRoutes()[0].getSummary().getDuration();
     }
 
     public static <T> List<List<T>> getPermutation(List<T> input) {

@@ -8,15 +8,14 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import yjkim.GuideUs.Kafka.Service.KafkaService;
 import yjkim.GuideUs.Route.DTO.CalculateTimeKakaoRequest;
 import yjkim.GuideUs.Route.DTO.CalculateTimeKakaoResponse;
+import yjkim.GuideUs.Route.DTO.GetRouteNaverRequest;
+import yjkim.GuideUs.Route.DTO.GetRouteNaverResponse;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -27,9 +26,16 @@ import java.util.List;
 public class RouteService {
 
     private static final String KAKAO_MOBILILTY_URL = "https://apis-navi.kakaomobility.com/v1/waypoints/directions";
+    private static final String NAVER_MAPS_URL = "https://naveropenapi.apigw.ntruss.com/map-direction/v1";
 
     @Value("${kakao.rest_api_key}")
     private String KAKAO_REST_API_KEY;
+
+    @Value("${naver.maps.client.id}")
+    private String NAVER_MAPS_CLIENT_ID;
+
+    @Value("${naver.maps.client.secret}")
+    private String NAVER_MAPS_CLIENT_SECRET;
 
 
     public String[][] calculateMinimumTimeRoute(String[] dep, String[] des, String[][] trans) {
@@ -47,6 +53,25 @@ public class RouteService {
         return temp;
     }
 
+    public GetRouteNaverResponse getRoute(GetRouteNaverRequest getRouteNaverRequest){
+        String start = getRouteNaverRequest.getStart();
+        String goal = getRouteNaverRequest.getGoal();
+        String wayPoints = getRouteNaverRequest.getWaypoints();
+        return WebClient.create(this.NAVER_MAPS_URL)
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/driving")
+                        .queryParam("start", start)
+                        .queryParam("goal", goal)
+                        .queryParam("waypoints", wayPoints)
+                        .build())
+                .header("x-ncp-apigw-api-key-id",NAVER_MAPS_CLIENT_ID )
+                .header("x-ncp-apigw-api-key", NAVER_MAPS_CLIENT_SECRET)
+                .retrieve()
+                .bodyToMono(GetRouteNaverResponse.class)
+                .block();
+    }
+
 
     public int calculateTime(String[] dep, String[] des, String[][] trans){
 
@@ -59,15 +84,7 @@ public class RouteService {
         String desLat = des[2]; // 목적 위도
 
         try {
-            RestTemplate restTemplate = new RestTemplate();
-
-            // HttpHeaders 설정
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "KakaoAK " + KAKAO_REST_API_KEY);
-            headers.set("Content-Type", "application/json");
-
             CalculateTimeKakaoRequest calculateTimeKakaoRequest = new CalculateTimeKakaoRequest();
-
             calculateTimeKakaoRequest.setOrigin(new CalculateTimeKakaoRequest.Origin(depName, depLon, depLat));
             calculateTimeKakaoRequest.setDestination(new CalculateTimeKakaoRequest.Destination(desName, desLon, desLat));
             CalculateTimeKakaoRequest.Waypoint[] waypoints = new CalculateTimeKakaoRequest.Waypoint[trans.length];
@@ -75,15 +92,17 @@ public class RouteService {
                 waypoints[i] = new CalculateTimeKakaoRequest.Waypoint(trans[i][0], trans[i][1], trans[i][0]);
             }
             calculateTimeKakaoRequest.setWaypoints(waypoints);
+            CalculateTimeKakaoResponse calculateTimeKakaoResponse = WebClient.create(KAKAO_MOBILILTY_URL)
+                    .post()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .header(HttpHeaders.AUTHORIZATION, "KakaoAK" + " " +this.KAKAO_REST_API_KEY)
+                    .bodyValue(calculateTimeKakaoRequest)
+                    .retrieve()
+                    .bodyToMono(CalculateTimeKakaoResponse.class)
+                    .block();
+            System.out.println(new ObjectMapper().writeValueAsString(calculateTimeKakaoResponse));
 
-            HttpEntity<CalculateTimeKakaoRequest> requestEntity = new HttpEntity<>(calculateTimeKakaoRequest, headers);
-
-            ResponseEntity<CalculateTimeKakaoResponse> calculateTimeKakaoResponse = restTemplate.postForEntity(
-                    KAKAO_MOBILILTY_URL,
-                    requestEntity,
-                    CalculateTimeKakaoResponse.class
-            );
-            return calculateTimeKakaoResponse.getBody().getRoutes()[0].getSummary().getDuration();
+            return calculateTimeKakaoResponse.getRoutes()[0].getSummary().getDuration();
         }
         catch (Exception e){
 

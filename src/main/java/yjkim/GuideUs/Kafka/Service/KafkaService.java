@@ -1,5 +1,6 @@
 package yjkim.GuideUs.Kafka.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -10,12 +11,16 @@ import org.springframework.context.event.EventListener;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import yjkim.GuideUs.Route.DTO.GetRouteNaverRequest;
+import yjkim.GuideUs.Route.DTO.GetRouteNaverResponse;
 import yjkim.GuideUs.Route.DTO.RouteCalcualteRequest;
 import yjkim.GuideUs.Route.Service.RouteService;
 
 import javax.sound.sampled.Port;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 @Service
@@ -102,11 +107,42 @@ public class KafkaService {
         String[] des = routeCalcualteRequest.getDes();
         String[][] trans = routeCalcualteRequest.getTrans();
 
+        String temp = "";
         System.out.println(dep[0]);
         System.out.println(des[0]);
 
         try {
             trans = this.routeService.calculateMinimumTimeRoute(dep, des, trans);
+            // trans에 들어가는게 순서
+            //
+            for(String[] tran : trans){
+                temp = temp + tran[1]+","+tran[2] + "|";
+            }
+            GetRouteNaverRequest getRouteNaverRequest = new GetRouteNaverRequest(
+                    dep[1]+","+dep[2],
+                    des[1]+","+des[2],
+                    temp
+            );
+
+            GetRouteNaverResponse getRouteNaverResponse = this.routeService.getRoute(getRouteNaverRequest);
+
+            List<List<Double>> redisValue = new ArrayList<>();
+            List<Double> startLocation = (getRouteNaverResponse.getRoute().getTraoptimal().get(0).getSummary().getStart().getLocation());
+            List<Double> goalLocation = (getRouteNaverResponse.getRoute().getTraoptimal().get(0).getSummary().getGoal().getLocation());
+            List<List<Double>> paths = getRouteNaverResponse.getRoute().getTraoptimal().get(0).getPath();
+            redisValue.add(startLocation);
+            for(List<Double> path : paths){
+                redisValue.add(path);
+            }
+            redisValue.add(goalLocation);
+
+            for(List<Double> re : redisValue){
+                System.out.println(re.get(0));
+            }
+
+
+
+
         }
         catch (Exception e){
             System.out.println("E : " + e);

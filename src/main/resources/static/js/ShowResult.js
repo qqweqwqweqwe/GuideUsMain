@@ -26,16 +26,20 @@ async function showResult(){
 }
 
 async function showMarkers(data){
-    const response = await fetch("/SendPlace")
+    // 여기서 url로 부터 requ
+    const url = window.location.href;
+    const requestId = url.split('/').pop();
+
+    const response = await fetch("/route/calculate/" + requestId)
     const responsejson=await response.json()
-    console.log(responsejson)
-    // 두번째 인덱스가 마지막 장소라서 맨 뒤로 보내줘야함
-    var second=responsejson[1]
-    responsejson.splice(1,1)
-    responsejson.push(second)
-    for(var i=0; i<responsejson.length; i++){
-        const place = responsejson[i]
-        const name=place[0]
+    const key = responsejson.key
+    const places = responsejson.value
+
+console.log(ket)
+    const placeArray = JSON.parse(places)
+
+    for(var i=0; i<placeArray.length; i++){
+        const place = placeArray[i]
         const x =parseFloat(place[1])
         const y = parseFloat(place[2])
         var markerPosition  = new kakao.maps.LatLng(y, x);
@@ -44,7 +48,7 @@ async function showMarkers(data){
         var marker = addMarker(markerPosition, i)
 
 
-        var iwContent = `<div style=padding:5px;>${name}</div>` // 인포윈도우에 표출될 내용으로 HTML 문자열이나 document element가 가능합니다
+        var iwContent = `<div style=padding:5px;> " "</div>` // 인포윈도우에 표출될 내용으로 HTML 문자열이나 document element가 가능합니다
             iwPosition = new kakao.maps.LatLng(y, x); //인포윈도우 표시 위치입니다
 
         // 인포윈도우를 생성합니다
@@ -60,8 +64,9 @@ async function showMarkers(data){
 
 }
 
+
 showResult().then(()=>{
-showMarkers()
+//showMarkers()
 })
 
 
@@ -70,15 +75,21 @@ async function setCore(){
     var globalx=0;
     var globaly=0;
     var routepath=[]
-    const response = await fetch("/SendRoute")
+    const url = window.location.href;
+    const requestId = url.split('/').pop();
+    const response = await fetch("/route/calculate/" + requestId)
 
-    const roads=await response.json()
-
+    const data=await response.json()
+    const roads = JSON.parse(data.value)
+    console.log(roads)
     for( var i=0; i<roads.length; i++){
-    globalx+=roads[i][0]
-    globaly+=roads[i][1]
-    var newLatLng = new kakao.maps.LatLng(roads[i][1], roads[i][0]);
-    routepath.push(newLatLng)
+        roads[i][0] = parseFloat(roads[i][0])
+        roads[i][1] = parseFloat(roads[i][1])
+
+        globalx+=roads[i][0]
+        globaly+=roads[i][1]
+        var newLatLng = new kakao.maps.LatLng(roads[i][1], roads[i][0]);
+        routepath.push(newLatLng)
     }
 
 

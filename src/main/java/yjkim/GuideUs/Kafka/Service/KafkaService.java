@@ -11,6 +11,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import yjkim.GuideUs.Redis.Service.RedisService;
 import yjkim.GuideUs.Route.DTO.GetRouteNaverRequest;
 import yjkim.GuideUs.Route.DTO.GetRouteNaverResponse;
 import yjkim.GuideUs.Route.DTO.RouteCalcualteRequest;
@@ -29,6 +30,7 @@ public class KafkaService {
 
     private final KafkaTemplate<String,RouteCalcualteRequest> kafkaTemplate;
     private final RouteService routeService;
+    private final RedisService redisService;
     public static final String ROUTE_CALCULATE_KAFKA_TOPIC = "guide-us-route";
     private Process zookeeperProcess;
     private Process kafkaProcess;
@@ -40,11 +42,6 @@ public class KafkaService {
     public void onApplicationStart(){
         startZookeeper();
         startKafka();
-        RouteCalcualteRequest routeCalcualteRequest = new RouteCalcualteRequest();
-        routeCalcualteRequest.setDep(new String[]{"test","test","test"});
-        routeCalcualteRequest.setDes(new String[]{"test","test","test"});
-
-        this.send(ROUTE_CALCULATE_KAFKA_TOPIC, "test",routeCalcualteRequest);
     }
 
 
@@ -80,12 +77,15 @@ public class KafkaService {
             kafkaProcess = processBuilder.start();
             System.out.println("Kafka started!");
             // 서버 종료시 자동으로 카프카 종료되도록
+
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 if (kafkaProcess != null && kafkaProcess.isAlive()) {
-                    System.out.println("Shutting down Zookeeper...");
+                    System.out.println("Shutting down kafka...");
                     kafkaProcess.destroy();
                 }
+
             }));
+
         }
 
         catch (Exception e){
@@ -136,10 +136,8 @@ public class KafkaService {
             }
             redisValue.add(goalLocation);
 
-            for(List<Double> re : redisValue){
-                System.out.println(re.get(0));
-            }
-
+            ObjectMapper objectMapper = new ObjectMapper();
+            redisService.save(key,objectMapper.writeValueAsString(redisValue));
 
 
 
@@ -147,9 +145,6 @@ public class KafkaService {
         catch (Exception e){
             System.out.println("E : " + e);
         }
-
-//
-        // 레디스에 저장
 
 
     }

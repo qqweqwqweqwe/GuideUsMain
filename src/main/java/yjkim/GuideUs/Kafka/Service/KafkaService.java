@@ -126,19 +126,26 @@ public class KafkaService {
 
             GetRouteNaverResponse getRouteNaverResponse = this.routeService.getRoute(getRouteNaverRequest);
 
-            List<List<Double>> redisValue = new ArrayList<>();
+            List<List<Double>> pathValue = new ArrayList<>();
+            List<String> nameValue = new ArrayList<>();
             List<Double> startLocation = (getRouteNaverResponse.getRoute().getTraoptimal().get(0).getSummary().getStart().getLocation());
             List<Double> goalLocation = (getRouteNaverResponse.getRoute().getTraoptimal().get(0).getSummary().getGoal().getLocation());
             List<List<Double>> paths = getRouteNaverResponse.getRoute().getTraoptimal().get(0).getPath();
-            redisValue.add(startLocation);
+            pathValue.add(startLocation);
             for(List<Double> path : paths){
-                redisValue.add(path);
+                pathValue.add(path);
             }
-            redisValue.add(goalLocation);
+            pathValue.add(goalLocation);
+
+            nameValue.add(dep[0]);
+            for(String[] tran : trans){
+                nameValue.add(tran[0]);
+            }
+            nameValue.add(des[0]);
 
             ObjectMapper objectMapper = new ObjectMapper();
-            redisService.save(key,objectMapper.writeValueAsString(redisValue));
-
+            redisService.save(key,objectMapper.writeValueAsString(pathValue));
+            redisService.save(key+"name", objectMapper.writeValueAsString(nameValue));
 
 
         }

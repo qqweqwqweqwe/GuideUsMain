@@ -23,23 +23,17 @@ async function showResult(){
         strokeStyle: 'solid'
     });
     polyline.setMap(map)
+    showMarkers(data[3])
 }
 
 async function showMarkers(data){
     // 여기서 url로 부터 requ
-    const url = window.location.href;
-    const requestId = url.split('/').pop();
+    const placeInfo =data.placeName
+    const placeInfoArray = JSON.parse(placeInfo)
 
-    const response = await fetch("/route/calculate/" + requestId)
-    const responsejson=await response.json()
-    const key = responsejson.key
-    const places = responsejson.value
-
-console.log(ket)
-    const placeArray = JSON.parse(places)
-
-    for(var i=0; i<placeArray.length; i++){
-        const place = placeArray[i]
+    for(var i=0; i<placeInfoArray.length; i++){
+        const place = placeInfoArray[i]
+        const name = place[0]
         const x =parseFloat(place[1])
         const y = parseFloat(place[2])
         var markerPosition  = new kakao.maps.LatLng(y, x);
@@ -48,7 +42,7 @@ console.log(ket)
         var marker = addMarker(markerPosition, i)
 
 
-        var iwContent = `<div style=padding:5px;> " "</div>` // 인포윈도우에 표출될 내용으로 HTML 문자열이나 document element가 가능합니다
+        var iwContent = `<div style=padding:5px;> "${name}"</div>` // 인포윈도우에 표출될 내용으로 HTML 문자열이나 document element가 가능합니다
             iwPosition = new kakao.maps.LatLng(y, x); //인포윈도우 표시 위치입니다
 
         // 인포윈도우를 생성합니다
@@ -97,7 +91,7 @@ async function setCore(){
     globalx=globalx/roads.length
     globaly=globaly/roads.length
 
-    return [globalx,globaly,routepath]
+    return [globalx,globaly,routepath,data]
 
 }
 

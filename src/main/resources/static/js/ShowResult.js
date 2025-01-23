@@ -42,7 +42,7 @@ async function showMarkers(data){
         var marker = addMarker(markerPosition, i)
 
 
-        var iwContent = `<div style=padding:5px;> "${name}"</div>` // 인포윈도우에 표출될 내용으로 HTML 문자열이나 document element가 가능합니다
+        var iwContent = `<div style=padding:5px;> ${name}</div>` // 인포윈도우에 표출될 내용으로 HTML 문자열이나 document element가 가능합니다
             iwPosition = new kakao.maps.LatLng(y, x); //인포윈도우 표시 위치입니다
 
         // 인포윈도우를 생성합니다

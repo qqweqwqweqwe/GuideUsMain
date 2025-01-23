@@ -41,14 +41,10 @@ public class RouteController {
         // 브로커에 삽입만
         kafkaService.send(KafkaService.ROUTE_CALCULATE_KAFKA_TOPIC, requestId, routeCalcualteRequest);
         String message = "Route calculated successfully!";
-        // 겟 요청 param에 id 담아서 보내
-
-        // 결과 반환
-
         // todo 이거 로컬 서버로 바꿔라 환경변수로
         String redirectUrl = "http://localhost:8080/maps/result/" + requestId;
 
-        return "redirect:" + redirectUrl; // 303 Redirect
+        return "redirect:/" + "maps/result/" + requestId; // 303 Redirect
     }
 
 
@@ -56,14 +52,13 @@ public class RouteController {
     public ResponseEntity<?> calculateShortestRoute(
             @PathVariable String requestId
     ){
-        System.out.println("해해");
         String value = redisService.get(requestId);
+        String placeName = redisService.get(requestId + "name");
         String key = requestId;
-        System.out.println("value : " + value);
         Map<String, String> responseBody = new HashMap<>();
         responseBody.put("key",key);
         responseBody.put("value",value);
-
+        responseBody.put("placeName",placeName);
         return ResponseEntity.ok(responseBody);
     }
 

@@ -36,62 +36,8 @@ public class KafkaService {
     private Process kafkaProcess;
 
 
-    // 어플리케이션 실행하면 자동으로 주키퍼랑 카프카 실행하도록
-    // 그리고 dummy-data 보냄으로써 카프카랑 연결까지 하도록
-    @EventListener(ApplicationStartedEvent.class)
-    public void onApplicationStart(){
-        startZookeeper();
-        startKafka();
-    }
 
 
-    public void startZookeeper() {
-        try {
-            String command = "bin\\windows\\zookeeper-server-start.bat config\\zookeeper.properties";
-            ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "/k", command);
-            processBuilder.directory(new File("C:\\kafka_2.13-3.9.0")); // Kafka 설치 경로
-            zookeeperProcess = processBuilder.start();
-            System.out.println("Zookeeper started!");
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if (zookeeperProcess != null && zookeeperProcess.isAlive()) {
-                    System.out.println("Shutting down Zookeeper...");
-                    zookeeperProcess.destroy();
-
-                }
-
-            }));
-
-            System.out.println("Zookeeper started. Press Ctrl+C to stop the server.");
-        }
-        catch (Exception e){
-            System.out.println("Zookeeper error  : " + e);
-        }
-    }
-
-    private void startKafka() {
-        try {
-            String command = "bin\\windows\\kafka-server-start.bat config\\server.properties";
-            ProcessBuilder processBuilder = new ProcessBuilder("cmd.exe", "/c", command);
-            processBuilder.directory(new File("C:\\kafka_2.13-3.9.0")); // Kafka 설치 경로
-            kafkaProcess = processBuilder.start();
-            System.out.println("Kafka started!");
-            // 서버 종료시 자동으로 카프카 종료되도록
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if (kafkaProcess != null && kafkaProcess.isAlive()) {
-                    System.out.println("Shutting down kafka...");
-                    kafkaProcess.destroy();
-                }
-
-            }));
-
-        }
-
-        catch (Exception e){
-            System.out.println("Kafka error  : " + e);
-        }
-    }
     public void send(String topic, String key, RouteCalcualteRequest routeCalcualteRequest){
         kafkaTemplate.send(topic,key,routeCalcualteRequest);
         return;

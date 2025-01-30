@@ -15,10 +15,9 @@ public class MapsController {
 
 
 
-    @GetMapping("/")
+    @GetMapping("")
     public String getMaps(Model model){
 
-        System.out.println("dasdasd");
         return "maps";
     }
 
@@ -27,7 +26,7 @@ public class MapsController {
     public String calculateShortestRoute(
             @PathVariable String requestId
     ){
-        System.out.println(requestId);
+
         return "result";
 
     }

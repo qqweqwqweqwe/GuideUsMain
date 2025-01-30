@@ -100,7 +100,6 @@ public class RouteService {
                     .retrieve()
                     .bodyToMono(CalculateTimeKakaoResponse.class)
                     .block();
-            System.out.println(new ObjectMapper().writeValueAsString(calculateTimeKakaoResponse));
 
             return calculateTimeKakaoResponse.getRoutes()[0].getSummary().getDuration();
         }

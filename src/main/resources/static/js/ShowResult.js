@@ -5,8 +5,6 @@ var mapContainer;
 var map ;
 async function showResult(){
     const data=await setCore();
-    console.log(data[0])
-    console.log(data[1])
     var routepath=data[2]
     mapContainer = document.getElementById('map'), // 지도를 표시할 div
         mapOption = {
@@ -75,7 +73,6 @@ async function setCore(){
 
     const data=await response.json()
     const roads = JSON.parse(data.value)
-    console.log(roads)
     for( var i=0; i<roads.length; i++){
         roads[i][0] = parseFloat(roads[i][0])
         roads[i][1] = parseFloat(roads[i][1])

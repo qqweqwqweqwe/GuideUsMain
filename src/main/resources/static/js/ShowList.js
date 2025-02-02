@@ -32,7 +32,6 @@ function Showlist(PD){
     }
     sw.innerHTML+="<button onclick='sendData()'> ㄱㄱ </button>"
 
-    console.log(PD)
 
 }
 

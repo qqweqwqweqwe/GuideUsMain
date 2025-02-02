@@ -77,7 +77,6 @@ var infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 function searchPlaces() {
 
   var keyword = document.getElementById("keyword").value;
-  console.log(keyword)
   if (!keyword.replace(/^\s+|\s+$/g, "")) {
     alert("키워드를 입력해주세요!");
     return false;
@@ -153,14 +152,12 @@ function displayPlaces(places) {
 
         // 클릭한 위도, 경도 정보를 가져옵니다
         var latlng = marker.getPosition();
-            console.log(latlng)
         if (Object.keys(PlaceDict).length===5){
             alert('장소는 최대 5곳 까지만 가능합니다')
             return
         }
         else if(!(markerplacename in PlaceDict)){
             PlaceDict[markerplacename]=[Placelist[markerindex].x,Placelist[markerindex].y]
-            console.log(PlaceDict.length)
         }
 
         Showlist(PlaceDict)
@@ -305,7 +302,6 @@ function removeAllChildNods(el) {
 // info 클래스들을 모두 선택합니다
 function AddEventToInfo(){
 const infoElements = document.querySelectorAll(".item");
-console.log(infoElements)
 infoElements.forEach((target) => target.addEventListener("click", function(){
 
     var spanElement=target.querySelector("span");

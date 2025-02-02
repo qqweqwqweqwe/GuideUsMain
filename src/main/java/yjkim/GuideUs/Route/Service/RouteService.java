@@ -105,7 +105,6 @@ public class RouteService {
         }
         catch (Exception e){
 
-            System.out.println("dasdasd" + e);
             return 1;
         }
 

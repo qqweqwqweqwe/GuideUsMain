@@ -34,17 +34,16 @@ public class RouteController {
 
 
     @PostMapping("/send")
+    @ResponseBody
     public String sendRoute(@RequestBody RouteCalcualteRequest routeCalcualteRequest){
         String requestId = UUID.randomUUID().toString();
 
 
         // 브로커에 삽입만
         kafkaService.send(KafkaService.ROUTE_CALCULATE_KAFKA_TOPIC, requestId, routeCalcualteRequest);
-        String message = "Route calculated successfully!";
         // todo 이거 로컬 서버로 바꿔라 환경변수로
-        String redirectUrl = "http://localhost:8080/maps/result/" + requestId;
 
-        return "redirect:/" + "maps/result/" + requestId; // 303 Redirect
+        return requestId; // 303 Redirect
     }
 
 
@@ -52,14 +51,39 @@ public class RouteController {
     public ResponseEntity<?> calculateShortestRoute(
             @PathVariable String requestId
     ){
-        String value = redisService.get(requestId);
-        String placeName = redisService.get(requestId + "name");
-        String key = requestId;
-        Map<String, String> responseBody = new HashMap<>();
-        responseBody.put("key",key);
-        responseBody.put("value",value);
-        responseBody.put("placeName",placeName);
-        return ResponseEntity.ok(responseBody);
+        try {
+
+
+            String value = redisService.get(requestId);
+            String placeName = redisService.get(requestId + "name");
+            int retryCount = 0;
+            int maxRetries = 10; // 최대 재시도 횟수
+            int waitTime = 200; // 초기 대기 시간 (밀리초)
+            while ((value == null || placeName == null) && retryCount < maxRetries) {
+                value = redisService.get(requestId);
+                placeName = redisService.get(requestId + "name");
+
+                if (value != null && placeName != null) {
+                    break; // 데이터가 들어오면 루프 탈출
+                }
+
+                retryCount++;
+
+                Thread.sleep(waitTime);
+
+                waitTime *= 2; // 🔥 다음 재시도에서 대기 시간 2배 증가
+            }
+
+            Map<String, String> responseBody = new HashMap<>();
+            responseBody.put("key", requestId);
+            responseBody.put("value", value);
+            responseBody.put("placeName", placeName);
+            return ResponseEntity.ok(responseBody);
+        }catch (Exception e){
+            return ResponseEntity.ok()
+                    .body("hi");
+
+        }
     }
 
 

@@ -32,35 +32,28 @@ public class KafkaService {
     private final RouteService routeService;
     private final RedisService redisService;
     public static final String ROUTE_CALCULATE_KAFKA_TOPIC = "guide-us-route";
-    private Process zookeeperProcess;
-    private Process kafkaProcess;
 
 
 
 
     public void send(String topic, String key, RouteCalcualteRequest routeCalcualteRequest){
         kafkaTemplate.send(topic,key,routeCalcualteRequest);
-        return;
     }
 
     @KafkaListener(topics = ROUTE_CALCULATE_KAFKA_TOPIC )
     public void consume(ConsumerRecord<String, RouteCalcualteRequest> record){
 
         String key = record.key();
-        System.out.println("key : " + key);
         RouteCalcualteRequest routeCalcualteRequest = record.value();
         String[] dep = routeCalcualteRequest.getDep();
         String[] des = routeCalcualteRequest.getDes();
         String[][] trans = routeCalcualteRequest.getTrans();
 
         String temp = "";
-        System.out.println(dep[0]);
-        System.out.println(des[0]);
 
         try {
             trans = this.routeService.calculateMinimumTimeRoute(dep, des, trans);
             // trans에 들어가는게 순서
-            //
             for(String[] tran : trans){
                 temp = temp + tran[1]+","+tran[2] + "|";
             }
@@ -71,7 +64,6 @@ public class KafkaService {
             );
 
             GetRouteNaverResponse getRouteNaverResponse = this.routeService.getRoute(getRouteNaverRequest);
-
             List<List<Double>> pathValue = new ArrayList<>();
             List<String[]> placeInfo = new ArrayList<>();
             List<Double> startLocation = (getRouteNaverResponse.getRoute().getTraoptimal().get(0).getSummary().getStart().getLocation());
@@ -90,13 +82,13 @@ public class KafkaService {
             placeInfo.add(des);
 
             ObjectMapper objectMapper = new ObjectMapper();
-            redisService.save(key,objectMapper.writeValueAsString(pathValue));
-            redisService.save(key+"name", objectMapper.writeValueAsString(placeInfo));
-
-
+            try {
+                redisService.save(key, objectMapper.writeValueAsString(pathValue));
+                redisService.save(key + "name", objectMapper.writeValueAsString(placeInfo));
+            }catch (Exception e){
+            }
         }
         catch (Exception e){
-            System.out.println("E : " + e);
         }
 
 
